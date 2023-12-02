@@ -22,9 +22,23 @@ repositories {
 }
 
 dependencies {
+
+	// Spring Web
 	implementation 'org.springframework.boot:spring-boot-starter-web'
+
+	// lombok
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
+
+	// H2
+	runtimeOnly 'com.h2database:h2'
+
+	// JPA
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+
+	// FCM
+	implementation 'com.google.firebase:firebase-admin:9.1.1'
+
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 }
 
