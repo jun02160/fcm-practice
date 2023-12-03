@@ -49,7 +49,7 @@ public class FCMService {
      * - Firebase에 메시지를 수신하는 함수 (헤더와 바디 직접 만들기)
      */
     @Transactional
-    public String pushAlarm(FCMPushRequestDto request) throws IOException {
+    public String pushAlarm(FCMPushRequestDto request) {
 
         String message = makeSingleMessage(request);
         sendPushMessage(message);
@@ -88,7 +88,8 @@ public class FCMService {
      * - 특정 타깃 토큰 없이 해당 주제를 구독한 모든 유저에 푸시 전송
      */
     @Transactional
-    public String pushTopicAlarm(FCMPushRequestDto request) throws IOException {
+    public String pushTopicAlarm(FCMPushRequestDto request) {
+
 
         String message = makeTopicMessage(request);
         sendPushMessage(message);
@@ -131,39 +132,47 @@ public class FCMService {
 
     // 요청 파라미터를 FCM의 body 형태로 만들어주는 메서드 [단일 기기]
 
-    private String makeSingleMessage(FCMPushRequestDto request) throws JsonProcessingException {
+    private String makeSingleMessage(FCMPushRequestDto request) {
 
-        FCMMessage fcmMessage = FCMMessage.builder()
-                .message(FCMMessage.Message.builder()
-                        .token(request.getTargetToken())   // 1:1 전송 시 반드시 필요한 대상 토큰 설정
-                        .notification(FCMMessage.Notification.builder()
-                                .title(request.getTitle())
-                                .body(request.getBody())
-                                .image(request.getImage())
-                                .build())
-                        .build()
-                ).validateOnly(false)
-                .build();
+        try {
+            FCMMessage fcmMessage = FCMMessage.builder()
+                    .message(FCMMessage.Message.builder()
+                            .token(request.getTargetToken())   // 1:1 전송 시 반드시 필요한 대상 토큰 설정
+                            .notification(FCMMessage.Notification.builder()
+                                    .title(request.getTitle())
+                                    .body(request.getBody())
+                                    .image(request.getImage())
+                                    .build())
+                            .build()
+                    ).validateOnly(false)
+                    .build();
 
-        return objectMapper.writeValueAsString(fcmMessage);
+            return objectMapper.writeValueAsString(fcmMessage);
+        } catch (JsonProcessingException e) {
+            throw new IllegalArgumentException("JSON 처리 도중에 예외가 발생했습니다.");
+        }
     }
 
     // 요청 파라미터를 FCM의 body 형태로 만들어주는 메서드 [주제 구독]
-    private String makeTopicMessage(FCMPushRequestDto request) throws JsonProcessingException {
+    private String makeTopicMessage(FCMPushRequestDto request) {
 
-        FCMMessage fcmMessage = FCMMessage.builder()
-                .message(FCMMessage.Message.builder()
-                                .topic(topic)   // 토픽 구독에서 반드시 필요한 설정 (token 지정 x)
-                                .notification(FCMMessage.Notification.builder()
-                                        .title(request.getTitle())
-                                        .body(request.getBody())
-                                        .image(request.getImage())
-                                        .build())
-                                .build()
-                ).validateOnly(false)
-                .build();
+        try {
+            FCMMessage fcmMessage = FCMMessage.builder()
+                    .message(FCMMessage.Message.builder()
+                                    .topic(topic)   // 토픽 구독에서 반드시 필요한 설정 (token 지정 x)
+                                    .notification(FCMMessage.Notification.builder()
+                                            .title(request.getTitle())
+                                            .body(request.getBody())
+                                            .image(request.getImage())
+                                            .build())
+                                    .build()
+                    ).validateOnly(false)
+                    .build();
 
-        return objectMapper.writeValueAsString(fcmMessage);
+            return objectMapper.writeValueAsString(fcmMessage);
+        } catch (JsonProcessingException e) {
+            throw new IllegalArgumentException("JSON 처리 도중에 예외가 발생했습니다.");
+        }
     }
 
     // 요청 파라미터를 FCM의 body 형태로 만들어주는 메서드 [다수 기기]
@@ -182,32 +191,41 @@ public class FCMService {
     }
 
     // 실제 파이어베이스 서버로 푸시 메시지를 전송하는 메서드
-    private void sendPushMessage(String message) throws IOException {
+    private void sendPushMessage(String message) {
 
-        OkHttpClient client = new OkHttpClient();
-        RequestBody requestBody = RequestBody.create(message, MediaType.get("application/json; charset=utf-8"));
-        Request httpRequest = new Request.Builder()
-                .url(FCM_API_URL)
-                .post(requestBody)
-                .addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + getAccessToken())
-                .addHeader(HttpHeaders.CONTENT_TYPE, "application/json; UTF-8")
-                .build();
+        try {
+            OkHttpClient client = new OkHttpClient();
+            RequestBody requestBody = RequestBody.create(message, MediaType.get("application/json; charset=utf-8"));
+            Request httpRequest = new Request.Builder()
+                    .url(FCM_API_URL)
+                    .post(requestBody)
+                    .addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + getAccessToken())
+                    .addHeader(HttpHeaders.CONTENT_TYPE, "application/json; UTF-8")
+                    .build();
 
-        Response response = client.newCall(httpRequest).execute();
+            Response response = client.newCall(httpRequest).execute();
 
-        log.info("단일 기기 알림 전송 성공 ! successCount: 1 messages were sent successfully");
-        log.info("알림 전송: {}", response.body().string());
+            log.info("단일 기기 알림 전송 성공 ! successCount: 1 messages were sent successfully");
+            log.info("알림 전송: {}", response.body().string());
+        } catch (IOException e) {
+            throw new IllegalArgumentException("파일을 읽는 데 실패했습니다.");
+        }
     }
 
     // Firebase에서 Access Token 가져오기
-    private String getAccessToken() throws IOException {
+    private String getAccessToken() {
 
-        GoogleCredentials googleCredentials = GoogleCredentials
-                .fromStream(new ClassPathResource(SERVICE_ACCOUNT_JSON).getInputStream())
-                .createScoped(List.of("https://www.googleapis.com/auth/cloud-platform"));
-        googleCredentials.refreshIfExpired();
-        log.info("getAccessToken() - googleCredentials: {} ", googleCredentials.getAccessToken().getTokenValue());
+        try {
 
-        return googleCredentials.getAccessToken().getTokenValue();
+            GoogleCredentials googleCredentials = GoogleCredentials
+                    .fromStream(new ClassPathResource(SERVICE_ACCOUNT_JSON).getInputStream())
+                    .createScoped(List.of("https://www.googleapis.com/auth/cloud-platform"));
+            googleCredentials.refreshIfExpired();
+            log.info("getAccessToken() - googleCredentials: {} ", googleCredentials.getAccessToken().getTokenValue());
+
+            return googleCredentials.getAccessToken().getTokenValue();
+        } catch (IOException e) {
+            throw new IllegalArgumentException("파일을 읽는 데 실패했습니다.");
+        }
     }
 }
