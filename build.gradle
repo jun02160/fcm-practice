@@ -38,6 +38,7 @@ dependencies {
 
 	// FCM
 	implementation 'com.google.firebase:firebase-admin:9.1.1'
+	implementation 'com.squareup.okhttp3:okhttp:4.10.0'  // Firebase 서버로 푸시 메시지 전송 시 필요
 
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 }
